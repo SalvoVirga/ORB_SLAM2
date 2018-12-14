@@ -224,7 +224,7 @@ endif(OPENMP_FOUND AND G2O_USE_OPENMP)
 find_package(Eigen3 3.1.0 REQUIRED)
 
 # Generate config.h
-configure_file(config.h.in ${PROJECT_SOURCE_DIR}/config.h)
+configure_file(config.h.in ${PROJECT_SOURCE_DIR}/include/g2o/config.h)
 
 ### TARGETS
 

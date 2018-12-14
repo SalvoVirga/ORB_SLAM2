@@ -27,8 +27,6 @@
 
 #include "DBoW2/FeatureVector.h"
 
-#include <stdint-gcc.h>
-
 using namespace std;
 
 namespace ORB_SLAM2 {
