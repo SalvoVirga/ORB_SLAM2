@@ -28,9 +28,9 @@ install:
   - git pull
   - .\bootstrap-vcpkg.bat
   - vcpkg integrate install
-  - vcpkg install eigen3
-  - vcpkg install opencv
-  - vcpkg install pangolin
+  - vcpkg install eigen3:x64-windows-rel
+  - vcpkg install opencv:x64-windows-rel
+  - vcpkg install pangolin:x64-windows-rel
 
 before_build:
   - cd %APPVEYOR_BUILD_FOLDER%
