@@ -1,0 +1,71 @@
+language: cpp
+sudo: required
+dist: xenial
+
+cache:
+  bundler: true
+  directories:
+    - $HOME/docker
+
+matrix:
+  include:
+
+    # Linux C++11 GCC build
+    - os: linux
+      compiler: gcc
+      services: docker
+      env: MATRIX_EVAL="CC='gcc-5' && CXX='g++-5'" BUILD_TYPE='Release'
+
+    # Linux C++11 Clang build
+    - os: linux
+      compiler: clang
+      services: docker
+      env: MATRIX_EVAL="CC='clang-3.8' && CXX='clang++-3.8'" BUILD_TYPE='Release'
+
+    # OSX C++11 Clang Builds
+    - os: osx
+      osx_image: xcode8.3
+      compiler: clang
+      addons:
+        homebrew:
+          packages:
+          - cmake
+          - eigen
+          - glew
+          - opencv
+      env: MATRIX_EVAL="CXX='clang++'" BUILD_TYPE='Release'
+
+before_cache:
+  # Save tagged docker images
+  - >
+    mkdir -p $HOME/docker && docker images -a --filter='dangling=false' --format '{{.Repository}}:{{.Tag}} {{.ID}}'
+    | xargs -n 2 -t sh -c 'test -e $HOME/docker/$1.tar.gz || docker save $0 | gzip -2 > $HOME/docker/$1.tar.gz'
+      
+before_install:
+  # Load cached docker images
+  - if [[ -d $HOME/docker ]]; then ls $HOME/docker/*.tar.gz | xargs -I {file} sh -c "zcat {file} | docker load"; fi
+  - eval "${MATRIX_EVAL}"
+
+install:
+  # Install Pangolin, libzmq and cppzmq for OSX
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
+      mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
+      cd ${DEPS_DIR}
+      git clone https://github.com/stevenlovegrove/Pangolin.git
+      cd Pangolin && mkdir -p build && cd build
+      cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make -j8 install
+    fi
+
+script:
+  - cd ${TRAVIS_BUILD_DIR}
+  - |
+    if [[ "${TRAVIS_OS_NAME}" == "linux" ]]; then
+      docker pull salvovirga/orbslam2_1604 > /dev/null
+      docker run -e TRAVIS_OS_NAME -e CXX -e CC -e BUILD_TYPE -v $(pwd):/root/orb_slam2 -it salvovirga/orbslam2_1604 /bin/bash -c "cd /root/orb_slam2; source .travis/ci.sh" 
+    elif [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
+      mkdir -p build && cd build
+      cmake -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ..
+      make -j8
+    fi
