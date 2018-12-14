@@ -1,32 +1,75 @@
 cmake_minimum_required(VERSION 2.8)
-project(ORB_SLAM2)
+project(orb_slam2)
 
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release)
-ENDIF()
+### GENERAL
 
-MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
-
-# Check C++11 or C++0x support
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-   add_definitions(-DCOMPILEDWITHC11)
-   message(STATUS "Using flag -std=c++11.")
-elseif(COMPILER_SUPPORTS_CXX0X)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-   add_definitions(-DCOMPILEDWITHC0X)
-   message(STATUS "Using flag -std=c++0x.")
-else()
-   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
 endif()
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Allows all symbols generated from the dynamic library to be exported.
+if (WIN32)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif(WIN32)
+
+# Output all binaries and libs into a common folder across all libraries.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+
+# Set the compiler options to the given target according to the current architecture.
+function(orbslam2_compile_options target_name)
+  if(MSVC)
+    target_compile_options(${target_name} PRIVATE /W4 /w44640 /WX)
+    if (MSVC_VERSION GREATER 1900)
+      target_compile_options(${target_name} PRIVATE /permissive-)
+    endif()
+  else()
+    target_compile_options(${target_name} PRIVATE -Werror -Wall -Wextra -Wshadow -Wnon-virtual-dtor -pedantic)
+  endif()
+endfunction(orbslam2_compile_options)
+
+### UTILITIES
+
+option(ORBSLAM2_USE_IWYU "FALSE")
+option(ORBSLAM2_USE_LWYU "FALSE")
+mark_as_advanced(ORBSLAM2_USE_IWYU ORBSLAM2_USE_LWYU)
+
+if (${ORBSLAM2_USE_IWYU})
+  find_program(iwyu_path NAMES include-what-you-use iwyu)
+  if(NOT iwyu_path)
+    message(FATAL_ERROR "Could not find include-what-you-use")
+  else()
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+  endif()
+endif()
+
+if (${ORBSLAM2_USE_LWYU})
+  set(CMAKE_LINK_WHAT_YOU_USE ON)
+endif()
+
+###### OPTIONAL BUILDS
+
+option(ORBSLAM2_BUILD_EXAMPLES "Build ORB_SLAM2 Examples" FALSE)
+option(ORBSLAM2_BUILD_TESTS "Build ORB_SLAM2 Tests" FALSE)
+option(ORBSLAM2_BUILD_DOC "Build ORB_SLAM2 Documentation" FALSE)
+
+# Examples.
+if (${ORBSLAM2_BUILD_EXAMPLES})
+  add_subdirectory(examples)
+endif()
+
+# Documentation.
+if (${ORBSLAM2_BUILD_DOC})
+  add_subdirectory(doc)
+endif()
+
+### FIND PACKAGES
 
 find_package(OpenCV 3.0 QUIET)
 if(NOT OpenCV_FOUND)
@@ -39,14 +82,14 @@ endif()
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 
-include_directories(
-${PROJECT_SOURCE_DIR}
-${PROJECT_SOURCE_DIR}/include
-${EIGEN3_INCLUDE_DIR}
-${Pangolin_INCLUDE_DIRS}
-)
+### THIRPARTY LIBS
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+add_subdirectory(thirdparty/DBoW2)
+add_subdirectory(thirdparty/g2o)
+
+### TARGETS
+
+file(GLOB ORBSLAM2_HEADERS "include/orb_slam2/*.h")
 
 add_library(${PROJECT_NAME} SHARED
 src/System.cc
@@ -70,44 +113,18 @@ src/Initializer.cc
 src/Viewer.cc
 )
 
-target_link_libraries(${PROJECT_NAME}
-${OpenCV_LIBS}
-${EIGEN3_LIBS}
-${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
-${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+target_include_directories(${PROJECT_NAME}
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    $<BUILD_INTERFACE:${EIGEN3_INCLUDE_DIR}>
+    $<BUILD_INTERFACE:${Pangolin_INCLUDE_DIRS}>
 )
 
-# Build examples
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D)
-
-add_executable(rgbd_tum
-Examples/RGB-D/rgbd_tum.cc)
-target_link_libraries(rgbd_tum ${PROJECT_NAME})
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
-
-add_executable(stereo_kitti
-Examples/Stereo/stereo_kitti.cc)
-target_link_libraries(stereo_kitti ${PROJECT_NAME})
-
-add_executable(stereo_euroc
-Examples/Stereo/stereo_euroc.cc)
-target_link_libraries(stereo_euroc ${PROJECT_NAME})
-
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Monocular)
-
-add_executable(mono_tum
-Examples/Monocular/mono_tum.cc)
-target_link_libraries(mono_tum ${PROJECT_NAME})
-
-add_executable(mono_kitti
-Examples/Monocular/mono_kitti.cc)
-target_link_libraries(mono_kitti ${PROJECT_NAME})
-
-add_executable(mono_euroc
-Examples/Monocular/mono_euroc.cc)
-target_link_libraries(mono_euroc ${PROJECT_NAME})
-
+target_link_libraries(${PROJECT_NAME} PUBLIC
+  ${OpenCV_LIBS}
+  ${Pangolin_LIBRARIES}
+  DBoW2
+  g2o
+)
