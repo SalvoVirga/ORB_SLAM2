@@ -92,25 +92,25 @@ add_subdirectory(thirdparty/g2o)
 file(GLOB ORBSLAM2_HEADERS "include/orb_slam2/*.h")
 
 add_library(${PROJECT_NAME} SHARED
-src/System.cc
-src/Tracking.cc
-src/LocalMapping.cc
-src/LoopClosing.cc
-src/ORBextractor.cc
-src/ORBmatcher.cc
-src/FrameDrawer.cc
-src/Converter.cc
-src/MapPoint.cc
-src/KeyFrame.cc
-src/Map.cc
-src/MapDrawer.cc
-src/Optimizer.cc
-src/PnPsolver.cc
-src/Frame.cc
-src/KeyFrameDatabase.cc
-src/Sim3Solver.cc
-src/Initializer.cc
-src/Viewer.cc
+  src/System.cc
+  src/Tracking.cc
+  src/LocalMapping.cc
+  src/LoopClosing.cc
+  src/ORBextractor.cc
+  src/ORBmatcher.cc
+  src/FrameDrawer.cc
+  src/Converter.cc
+  src/MapPoint.cc
+  src/KeyFrame.cc
+  src/Map.cc
+  src/MapDrawer.cc
+  src/Optimizer.cc
+  src/PnPsolver.cc
+  src/Frame.cc
+  src/KeyFrameDatabase.cc
+  src/Sim3Solver.cc
+  src/Initializer.cc
+  src/Viewer.cc
 )
 
 target_include_directories(${PROJECT_NAME}
