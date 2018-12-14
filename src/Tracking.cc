@@ -1254,7 +1254,7 @@ void Tracking::Reset() {
   cout << "System Reseting" << endl;
   if (mpViewer) {
     mpViewer->RequestStop();
-    while (!mpViewer->isStopped()) usleep(3000);
+    while (!mpViewer->isStopped()) std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
 
   // Reset Local Mapping

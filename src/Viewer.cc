@@ -144,7 +144,10 @@ void Viewer::Run() {
     }
 
     if (Stop()) {
-      while (isStopped()) { usleep(3000); }
+      while (isStopped()) {
+        std::this_thread::sleep_for(std::chrono::microseconds(3000));
+        ;
+      }
     }
 
     if (CheckFinish()) break;

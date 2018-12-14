@@ -79,7 +79,7 @@ void LocalMapping::Run() {
       mpLoopCloser->InsertKeyFrame(mpCurrentKeyFrame);
     } else if (Stop()) {
       // Safe area to stop
-      while (isStopped() && !CheckFinish()) { usleep(3000); }
+      while (isStopped() && !CheckFinish()) { std::this_thread::sleep_for(std::chrono::microseconds(3000)); }
       if (CheckFinish()) break;
     }
 
@@ -90,7 +90,7 @@ void LocalMapping::Run() {
 
     if (CheckFinish()) break;
 
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
 
   SetFinish();
@@ -605,7 +605,7 @@ void LocalMapping::RequestReset() {
       unique_lock<mutex> lock2(mMutexReset);
       if (!mbResetRequested) break;
     }
-    usleep(3000);
+    std::this_thread::sleep_for(std::chrono::microseconds(3000));
   }
 }
 

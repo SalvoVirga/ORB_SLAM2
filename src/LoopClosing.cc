@@ -74,7 +74,7 @@ void LoopClosing::Run() {
 
     if (CheckFinish()) break;
 
-    usleep(5000);
+    std::this_thread::sleep_for(std::chrono::microseconds(5000));
   }
 
   SetFinish();
@@ -364,7 +364,7 @@ void LoopClosing::CorrectLoop() {
   }
 
   // Wait until Local Mapping has effectively stopped
-  while (!mpLocalMapper->isStopped()) { usleep(1000); }
+  while (!mpLocalMapper->isStopped()) { std::this_thread::sleep_for(std::chrono::microseconds(1000)); }
 
   // Ensure current keyframe is updated
   mpCurrentKF->UpdateConnections();
@@ -546,7 +546,7 @@ void LoopClosing::RequestReset() {
       unique_lock<mutex> lock2(mMutexReset);
       if (!mbResetRequested) break;
     }
-    usleep(5000);
+    std::this_thread::sleep_for(std::chrono::microseconds(5000));
   }
 }
 
@@ -579,7 +579,9 @@ void LoopClosing::RunGlobalBundleAdjustment(unsigned long nLoopKF) {
       mpLocalMapper->RequestStop();
       // Wait until Local Mapping has effectively stopped
 
-      while (!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished()) { usleep(1000); }
+      while (!mpLocalMapper->isStopped() && !mpLocalMapper->isFinished()) {
+        std::this_thread::sleep_for(std::chrono::microseconds(1000));
+      }
 
       // Get Map Mutex
       unique_lock<mutex> lock(mpMap->mMutexMapUpdate);
