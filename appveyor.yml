@@ -15,27 +15,37 @@ environment:
       CMAKE_GENERATOR: Visual Studio 14 2015
       VISUAL_STUDIO_INTERNAL_VERSION: 140
       VISUAL_STUDIO_VERSION: 14.0
+      Platform: x64
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       CMAKE_GENERATOR: Visual Studio 15 2017
       VISUAL_STUDIO_INTERNAL_VERSION: 141
       VISUAL_STUDIO_VERSION: 14.1
+      Platform: x64
 
 matrix:
   fast_finish: true
 
-install:
-  - cd C:\Tools\vcpkg
+init:
+  - cd %VCPKG_DIR%
   - git pull
+  - echo.set(VCPKG_BUILD_TYPE %CONFIGURATION%)>> %VCPKG_DIR%\triplets\%PLATFORM%-windows.cmake
   - .\bootstrap-vcpkg.bat
+  - vcpkg version
+  - cd %APPVEYOR_BUILD_FOLDER%
+
+install:
   - vcpkg integrate install
-  - vcpkg install eigen3:x64-windows-rel
-  - vcpkg install opencv:x64-windows-rel
-  - vcpkg install pangolin:x64-windows-rel
+  - vcpkg install eigen3:%PLATFORM%-windows
+  - vcpkg install opencv:%PLATFORM%-windows
+  - vcpkg install pangolin:%PLATFORM%-windows
+
+build:
+  parallel: true
 
 before_build:
   - cd %APPVEYOR_BUILD_FOLDER%
   - mkdir build && cd build
-  - cmake -G "%CMAKE_GENERATOR% Win64" -DCMAKE_BUILD_TYPE=%CONFIGURATION% -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+  - cmake -G "%CMAKE_GENERATOR% Win64" -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
 
 build_script:
   - cmake --build . --config %CONFIGURATION% -- /verbosity:minimal
