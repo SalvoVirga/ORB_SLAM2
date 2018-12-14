@@ -26,7 +26,7 @@ matrix:
   fast_finish: true
 
 init:
-  - cd %VCPKG_DIR%
+  - cd C:\Tools\vcpkg
   - git pull
   - echo.set(VCPKG_BUILD_TYPE %CONFIGURATION%)>> %VCPKG_DIR%\triplets\%PLATFORM%-windows.cmake
   - .\bootstrap-vcpkg.bat
